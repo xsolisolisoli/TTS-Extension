@@ -46,6 +46,10 @@ const manifest = {
   icons: {
     128: 'icon-128.png',
   },
+  content_security_policy: {
+    extension_pages:
+      "script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' http://localhost:* http://127.0.0.1:* https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3/dist/ort-wasm-simd-threaded.jsep.mjs; object-src 'self'",
+  },
   content_scripts: [
     {
       matches: ['http://*/*', 'https://*/*', '<all_urls>'],

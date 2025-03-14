@@ -1,7 +1,7 @@
 import '@src/Popup.css';
 import { useStorage, withErrorBoundary, withSuspense } from '@extension/shared';
 import { exampleThemeStorage } from '@extension/storage';
-import { KokoroTTS } from 'kokoro-js';
+import { KokoroTTS, TextSplitterStream } from 'kokoro-js';
 import { t } from '@extension/i18n';
 import { ToggleButton } from '@extension/ui';
 
@@ -12,7 +12,35 @@ const notificationOptions = {
   message: 'You cannot inject script here!',
 } as const;
 
-const Popup = () => {
+const Popup = async () => {
+  const model_id = 'onnx-community/Kokoro-82M-v1.0-ONNX';
+  const tts = await KokoroTTS.from_pretrained(model_id, {
+    dtype: 'q8', // Options: "fp32", "fp16", "q8", "q4", "q4f16"
+    device: 'wasm', // Options: "wasm", "webgpu" (web) or "cpu" (node). If using "webgpu", we recommend using dtype="fp32".
+  });
+  const text = "Life is like a box of chocolates. You never know what you're gonna get.";
+  // First, set up the stream
+  const splitter = new TextSplitterStream();
+  const stream = tts.stream(splitter);
+  (async () => {
+    let i = 0;
+    for await (const { text, phonemes, audio } of stream) {
+      console.log({ text, phonemes });
+      audio.save(`audio-${i++}.wav`);
+    }
+  })();
+  const tokens = text.match(/\s*\S+/g);
+  if (tokens) {
+    for (const token of tokens) {
+      splitter.push(token);
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  }
+
+  // Finally, close the stream to signal that no more text will be added.
+  splitter.flush();
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const theme = useStorage(exampleThemeStorage);
   const isLight = theme === 'light';
   const logo = isLight ? 'popup/logo_vertical.svg' : 'popup/logo_vertical_dark.svg';
@@ -42,20 +70,20 @@ const Popup = () => {
   return (
     <div className={`App ${isLight ? 'bg-slate-50' : 'bg-gray-800'}`}>
       <header className={`App-header ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
-        <button onClick={goGithubSite}>
-          <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" />
-        </button>
+        {/* <button onClick={goGithubSite}> */}
+        <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" />
+        {/* </button> */}
         <p>
           Edit <code>pages/popup/src/Popup.tsx</code>
         </p>
-        <button
+        {/* <button
           className={
             'font-bold mt-4 py-1 px-4 rounded shadow hover:scale-105 ' +
             (isLight ? 'bg-blue-200 text-black' : 'bg-gray-700 text-white')
           }
           onClick={injectContentScript}>
           Click to inject Content Script
-        </button>
+        </button> */}
         <ToggleButton>{t('toggleTheme')}</ToggleButton>
       </header>
     </div>
