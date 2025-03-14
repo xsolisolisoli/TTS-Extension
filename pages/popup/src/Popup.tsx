@@ -1,6 +1,7 @@
 import '@src/Popup.css';
 import { useStorage, withErrorBoundary, withSuspense } from '@extension/shared';
 import { exampleThemeStorage } from '@extension/storage';
+import { KokoroTTS } from 'kokoro-js';
 import { t } from '@extension/i18n';
 import { ToggleButton } from '@extension/ui';
 
